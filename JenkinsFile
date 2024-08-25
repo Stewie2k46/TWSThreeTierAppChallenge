@@ -10,7 +10,7 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                git credentialsId: 'github-creds', url: 'https://github.com/your-username/your-repo.git', branch: 'main'
+                git credentialsId: 'github-creds', url: 'https://github.com/Stewie2k46/TWSThreeTierAppChallenge.git', branch: 'main'
             }
         }
 
