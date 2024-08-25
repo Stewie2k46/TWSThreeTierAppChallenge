@@ -4,16 +4,16 @@ pipeline {
     environment {
         FRONTEND_ECR_URI = "public.ecr.aws/p5f6x8d7/three-tier-frontend"
         BACKEND_ECR_URI = "public.ecr.aws/p5f6x8d7/three-tier-backend"
-        DATABASE_ECR_URI = "public.ecr.aws/p5f6x8d7/three-tier-database"  // Adjust as needed
-        AWS_REGION = 'us-west-2'  // Change to your AWS region
+        DATABASE_ECR_URI = "public.ecr.aws/p5f6x8d7/three-tier-database"
+        AWS_REGION = 'us-west-2'  // Adjust to your AWS region
         IMAGE_TAG = "latest"
-        AWS_CREDENTIALS = credentials('aws-ecr-creds')  // Ensure this ID matches your credentials in Jenkins
+        AWS_CREDENTIALS = credentials('aws-ecr-creds')  // Make sure this matches your Jenkins credentials ID
     }
 
     stages {
         stage('Checkout Code') {
             steps {
-                git url: 'https://github.com/Stewie2k46/TWSThreeTierAppChallenge.git', branch: 'main'
+                git credentialsId: 'git-hub', url: 'https://github.com/Stewie2k46/TWSThreeTierAppChallenge.git', branch: 'main'
             }
         }
 
@@ -30,8 +30,15 @@ pipeline {
         stage('Login to ECR') {
             steps {
                 script {
-                    sh "aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $FRONTEND_ECR_URI"
-                    sh "aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $BACKEND_ECR_URI"
+                    withCredentials([[
+                        $class: 'AmazonWebServicesCredentialsBinding',
+                        credentialsId: 'aws-ecr-creds', // Your AWS credentials ID in Jenkins
+                        accessKeyVariable: 'AWS_ACCESS_KEY_ID',
+                        secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
+                    ]]) {
+                        sh "aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $FRONTEND_ECR_URI"
+                        sh "aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $BACKEND_ECR_URI"
+                    }
                 }
             }
         }
