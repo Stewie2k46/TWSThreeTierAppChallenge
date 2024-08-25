@@ -5,15 +5,21 @@ pipeline {
         FRONTEND_ECR_URI = "public.ecr.aws/p5f6x8d7/three-tier-frontend"
         BACKEND_ECR_URI = "public.ecr.aws/p5f6x8d7/three-tier-backend"
         DATABASE_ECR_URI = "public.ecr.aws/p5f6x8d7/three-tier-database"
-        AWS_REGION = 'us-west-2'  // Adjust to your AWS region
+        AWS_REGION = 'us-west-2'
         IMAGE_TAG = "latest"
-        AWS_CREDENTIALS = credentials('aws-ecr-creds')  // Make sure this matches your Jenkins credentials ID
+        AWS_CREDENTIALS = credentials('aws-ecr-creds')
     }
 
     stages {
         stage('Checkout Code') {
             steps {
                 git credentialsId: 'git-hub', url: 'https://github.com/Stewie2k46/TWSThreeTierAppChallenge.git', branch: 'main'
+            }
+        }
+
+        stage('Check Workspace Contents') {
+            steps {
+                sh 'ls -al'
             }
         }
 
@@ -32,7 +38,7 @@ pipeline {
                 script {
                     withCredentials([[
                         $class: 'AmazonWebServicesCredentialsBinding',
-                        credentialsId: 'aws-ecr-creds', // Your AWS credentials ID in Jenkins
+                        credentialsId: 'aws-ecr-creds',
                         accessKeyVariable: 'AWS_ACCESS_KEY_ID',
                         secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
                     ]]) {
