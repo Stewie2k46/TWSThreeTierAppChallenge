@@ -1,0 +1,82 @@
+pipeline {
+    agent any
+
+    environment {
+        FRONTEND_ECR_URI = "public.ecr.aws/p5f6x8d7/three-tier-frontend"
+        BACKEND_ECR_URI = "public.ecr.aws/p5f6x8d7/three-tier-backend"
+        DATABASE_ECR_URI = "public.ecr.aws/p5f6x8d7/three-tier-database"  // Adjust as needed
+        AWS_REGION = 'us-west-2'  // Change to your AWS region
+        IMAGE_TAG = "latest"
+        AWS_CREDENTIALS = credentials('aws-ecr-creds')  // Ensure this ID matches your credentials in Jenkins
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                git url: 'https://github.com/Stewie2k46/TWSThreeTierAppChallenge.git', branch: 'main'
+            }
+        }
+
+        stage('Build Docker Images') {
+            steps {
+                script {
+                    sh "docker build -t $FRONTEND_ECR_URI:$IMAGE_TAG ./Frontend"
+                    sh "docker build -t $BACKEND_ECR_URI:$IMAGE_TAG ./Backend"
+                    sh "docker build -t $DATABASE_ECR_URI:$IMAGE_TAG ./Database"
+                }
+            }
+        }
+
+        stage('Login to ECR') {
+            steps {
+                script {
+                    sh "aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $FRONTEND_ECR_URI"
+                    sh "aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $BACKEND_ECR_URI"
+                }
+            }
+        }
+
+        stage('Push Docker Images to ECR') {
+            steps {
+                script {
+                    sh "docker push $FRONTEND_ECR_URI:$IMAGE_TAG"
+                    sh "docker push $BACKEND_ECR_URI:$IMAGE_TAG"
+                    sh "docker push $DATABASE_ECR_URI:$IMAGE_TAG"
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                script {
+                    withKubeConfig([credentialsId: 'minikube-kubeconfig']) {
+                        sh 'kubectl apply -f ./Kubernetes-Manifests-file/Frontend'
+                        sh 'kubectl apply -f ./Kubernetes-Manifests-file/Backend'
+                        sh 'kubectl apply -f ./Kubernetes-Manifests-file/Database'
+                    }
+                }
+            }
+        }
+
+        stage('Test Deployment') {
+            steps {
+                script {
+                    sh 'kubectl get pods -n three-tier'
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo "Cleaning up workspace"
+            cleanWs()
+        }
+        success {
+            echo 'Deployment succeeded'
+        }
+        failure {
+            echo 'Deployment failed'
+        }
+    }
+}
