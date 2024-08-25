@@ -27,8 +27,8 @@ pipeline {
             steps {
                 script {
                     // Assuming Dockerfiles are located inside Kubernetes-Manifests-file
-                    sh "docker build -t $FRONTEND_ECR_URI:$IMAGE_TAG Kubernetes-Manifests-file/frontend"
-                    sh "docker build -t $BACKEND_ECR_URI:$IMAGE_TAG Kubernetes-Manifests-file/backend"
+                    sh "docker build -t $FRONTEND_ECR_URI:$IMAGE_TAG Kubernetes-Manifests-file/Frontend"
+                    sh "docker build -t $BACKEND_ECR_URI:$IMAGE_TAG Kubernetes-Manifests-file/Backend"
                 }
             }
         }
