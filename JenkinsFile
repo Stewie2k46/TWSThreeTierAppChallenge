@@ -17,18 +17,18 @@ pipeline {
             }
         }
 
-        stage('Check Workspace Contents') {
+        stage('Check Kubernetes Manifests Directory Contents') {
             steps {
-                sh 'ls -al'
+                sh 'ls -al Kubernetes-Manifests-file'
             }
         }
 
         stage('Build Docker Images') {
             steps {
                 script {
-                    sh "docker build -t $FRONTEND_ECR_URI:$IMAGE_TAG ./Frontend"
-                    sh "docker build -t $BACKEND_ECR_URI:$IMAGE_TAG ./Backend"
-                    sh "docker build -t $DATABASE_ECR_URI:$IMAGE_TAG ./Database"
+                    // Assuming Dockerfiles are located inside Kubernetes-Manifests-file
+                    sh "docker build -t $FRONTEND_ECR_URI:$IMAGE_TAG Kubernetes-Manifests-file/frontend"
+                    sh "docker build -t $BACKEND_ECR_URI:$IMAGE_TAG Kubernetes-Manifests-file/backend"
                 }
             }
         }
@@ -54,7 +54,6 @@ pipeline {
                 script {
                     sh "docker push $FRONTEND_ECR_URI:$IMAGE_TAG"
                     sh "docker push $BACKEND_ECR_URI:$IMAGE_TAG"
-                    sh "docker push $DATABASE_ECR_URI:$IMAGE_TAG"
                 }
             }
         }
@@ -63,9 +62,8 @@ pipeline {
             steps {
                 script {
                     withKubeConfig([credentialsId: 'minikube-kubeconfig']) {
-                        sh 'kubectl apply -f ./Kubernetes-Manifests-file/Frontend'
-                        sh 'kubectl apply -f ./Kubernetes-Manifests-file/Backend'
-                        sh 'kubectl apply -f ./Kubernetes-Manifests-file/Database'
+                        sh 'kubectl apply -f Kubernetes-Manifests-file/frontend'
+                        sh 'kubectl apply -f Kubernetes-Manifests-file/backend'
                     }
                 }
             }
